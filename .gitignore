@@ -1,0 +1,68 @@
+# ── Copyrighted game data (bring your own legally-purchased copy) ────────
+# Nothing derived from the game belongs in this repo.
+input/
+_extract/
+*.rar
+*.pkg
+*.PKG
+*.edat
+*.EDAT
+*.rap
+*.RAP
+
+# The NEOGEO STATION package's own contents
+*.ccf            # Neo Geo ROM containers
+*.psb.m          # M2 "mdf" wrapped PSB assets
+*.nut.m          # M2 "mdf" wrapped Squirrel scripts
+*.at3
+*.bd3
+*.hd3
+*.sprx
+*.SPRX
+*.self
+*.SELF
+*.elf
+*.ELF
+*.BIN
+EBOOT*
+PARAM.SFO
+data/keys
+
+# ── Generated: lifted C++, analysis JSON, extracted images ───────────────
+#    All derived from YOUR copy. Regenerate; never commit.
+src/recomp/
+src/prx_gen/
+src/gen/*.cpp
+meta/
+generated/
+
+# ── Build output ─────────────────────────────────────────────────────────
+build/
+build_*/
+out/
+cmake-build-*/
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+compile_commands.json
+
+# ── Logs / scratch / captures ────────────────────────────────────────────
+*.log
+*.tmp
+scratch/
+*.ppm
+*.bmp
+*.png
+!docs/images/*.png
+
+# ── Python / IDE / OS ────────────────────────────────────────────────────
+__pycache__/
+*.pyc
+.venv/
+venv/
+.claude/
+.vs/
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store
