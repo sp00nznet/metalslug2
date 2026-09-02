@@ -14,6 +14,9 @@ a .ccf container beside them.  See docs/package-layout.md.
 import os, struct, sys, collections
 
 SELF_TYPES = {1: 'LV0', 2: 'LV1', 3: 'LV2', 4: 'APP', 5: 'ISO', 6: 'LDR', 8: 'NPDRM'}
+# The NPD block's licence type decides whether a title can be decrypted at all
+# without the buyer's own licence. 3 is the one you want.
+NPD_LICENSE = {1: 'network', 2: 'local (needs RAP/act.dat)', 3: 'free (fixed klicensee)'}
 MAGICS = {
     b'SCE\0': 'encrypted SCE binary (SELF/SPRX)',
     b'CCF\0': 'CCF container (Neo Geo ROM data)',
@@ -41,13 +44,31 @@ def read_sfo(path):
 
 
 def sce_info(path):
-    """Key revision and SELF type out of an SCE header, without decrypting it."""
-    d = open(path, 'rb').read(0x200)
+    """Key revision, SELF type and NPDRM licence, without decrypting anything."""
+    d = open(path, 'rb').read(0x1000)
     if d[:4] != b'SCE\0' or len(d) < 0x88:
         return None
     keyrev = struct.unpack('>H', d[8:10])[0]
     authid, _vendor, stype, _ver = struct.unpack('>QIIQ', d[0x70:0x88])
-    return keyrev, SELF_TYPES.get(stype, str(stype)), authid
+    lic = cid = None
+    # Walk the control info for the NPD block (type 3). This is the field that
+    # decides whether the binary can be decrypted without the buyer's licence.
+    try:
+        f = struct.unpack('>9Q', d[0x20:0x20 + 72])
+        p2, end = f[7], f[7] + f[8]
+        while p2 < end and p2 + 16 <= len(d):
+            ctype, csize, nxt = struct.unpack('>IIQ', d[p2:p2 + 16])
+            if ctype == 3:
+                b2 = d[p2 + 16:p2 + csize]
+                lic = struct.unpack('>I', b2[8:12])[0]
+                cid = b2[16:64].split(b'\0')[0].decode('ascii', 'replace')
+                break
+            if not nxt:
+                break
+            p2 += csize
+    except Exception:
+        pass
+    return keyrev, SELF_TYPES.get(stype, str(stype)), authid, lic, cid
 
 
 def magic_of(path):
@@ -73,9 +94,12 @@ def main():
             p = os.path.join(dirpath, fn)
             info = sce_info(p)
             if info:
-                keyrev, stype, authid = info
-                print('   %-28s %9d B  keyrev=0x%04X  %s  authid=0x%016X'
-                      % (fn, os.path.getsize(p), keyrev, stype, authid))
+                keyrev, stype, authid, lic, cid = info
+                print('   %-28s %9d B  keyrev=0x%04X  %s'
+                      % (fn, os.path.getsize(p), keyrev, stype))
+                if lic is not None:
+                    print('   %-28s licence=%d %s' % ('', lic, NPD_LICENSE.get(lic, '?')))
+                    print('   %-28s content_id=%s' % ('', cid))
 
     print('\n== Container formats')
     kinds = collections.Counter()

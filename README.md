@@ -66,24 +66,41 @@ Analysis only so far. Nothing is lifted yet, and nothing builds.
 | Package inventory | **done** — `NPEB00681`, 286 files, category HG, firmware 3.60+ |
 | Architecture identified | **done** — shell EBOOT + Neo Geo core PRX + 68000 CPU PRX |
 | Container formats mapped | **done** — `CCF` ROM data, M2 `mdf`-wrapped PSB assets and Squirrel scripts |
-| `EBOOT.BIN` → plain ELF | **blocked** — NPDRM SELF, key revision 0x10; needs your own licence (see below) |
-| PRX decryption | **blocked** — same, for both `libacc_neogeo_ps3` and `libemu_m68k_ps3` |
+| `EBOOT.BIN` → plain ELF | **blocked** — NPDRM licence type 2 (local); needs the RAP from your own purchase |
+| PRX decryption | **blocked** — same licence, for both `libacc_neogeo_ps3` and `libemu_m68k_ps3` |
 | Import / NID analysis | not started |
 | Function boundary detection | not started |
 | PPU lifting | not started |
 | Build & link | not started |
 | Boot | not started |
 
-## The first gate: decryption
+## The first gate: decryption, and it is a hard one
 
-All three binaries are **NPDRM** SELFs at key revision `0x10`, sharing one
-auth ID (`0x1010000001000003`). Unlike a disc SELF, an NPDRM binary is tied to a
-licence — so decrypting these needs the RAP or klicensee that came with *your*
-purchase, plus a firmware key set. Neither ships here, and neither should.
+All three binaries are **NPDRM** SELFs at key revision `0x10`, sharing one auth
+ID and one content ID. The NPD block in their control info says exactly how
+locked they are:
 
-This is the same bring-your-own-keys model the other ports use; it is simply the
-first step here rather than a footnote, because a PSN title cannot be analysed
-at all until it is done.
+```
+licence=2  local (needs RAP/act.dat)
+content_id=EP0576-NPEB00681_00-NEOGEOSTATION021
+```
+
+**Licence type 2 is the bad one.** A type 3 ("free") NPDRM title is decryptable
+by anyone with the published fixed klicensee — that is how
+[simpsonsarcade-ps3](https://github.com/sp00nznet/simpsonsarcade-ps3) got its
+plain ELF. Type 2 is tied to the buyer: it needs the RAP or `act.dat` from
+*your* purchase, which does not ship here and never will.
+
+So this port cannot start until that licence is supplied. It is not a step that
+can be engineered around, and nothing else in the pipeline matters until it is
+done.
+
+Note the content ID: `NEOGEOSTATION021` matches the `USRDIR/021/` payload
+directory, which is good evidence for the one-shell-many-titles theory — the
+shell and both emulator PRXs look shared across the NEOGEO STATION line, with
+only the numbered payload changing per title. If any *other* NEOGEO STATION
+title can be decrypted, its EBOOT and emulator modules are very likely the same
+binaries, and the lift would carry straight over.
 
 Once a plain ELF exists, the pipeline is the usual one, and the two PRXs are
 lifted alongside the EBOOT the way [flow](https://github.com/sp00nznet/flow)
