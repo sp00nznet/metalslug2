@@ -2,6 +2,8 @@
 # Nothing derived from the game belongs in this repo.
 input/
 _extract/
+_probe/
+_triage/
 *.rar
 *.pkg
 *.PKG
